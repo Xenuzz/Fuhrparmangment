@@ -4,7 +4,6 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -31,11 +30,12 @@ class ApiClient {
         }
     }
 
-    fun startTrip(token: String): Int {
+    fun startTrip(token: String, autoStarted: Boolean = true): Int {
+        val payload = JSONObject().put("auto_started", autoStarted)
         val request = Request.Builder()
             .url("${AppConfig.getApiBaseUrl()}/trips/start")
             .addHeader("Authorization", "Bearer $token")
-            .post("{}".toRequestBody(jsonType))
+            .post(payload.toString().toRequestBody(jsonType))
             .build()
 
         httpClient.newCall(request).execute().use { response ->
@@ -63,30 +63,33 @@ class ApiClient {
         }
     }
 
-    fun endTrip(token: String, tripId: Int) {
+    fun postBreak(token: String, breakRecord: BreakRecord) {
+        val payload = JSONObject()
+            .put("start_time", breakRecord.startTime)
+            .put("end_time", breakRecord.endTime)
+            .put("duration_minutes", breakRecord.durationMinutes)
+
+        val request = Request.Builder()
+            .url("${AppConfig.getApiBaseUrl()}/trips/${breakRecord.tripId}/breaks")
+            .addHeader("Authorization", "Bearer $token")
+            .post(payload.toString().toRequestBody(jsonType))
+            .build()
+
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("Post break failed: ${response.code}")
+        }
+    }
+
+    fun endTrip(token: String, tripId: Int, autoEnded: Boolean = true) {
+        val payload = JSONObject().put("auto_ended", autoEnded)
         val request = Request.Builder()
             .url("${AppConfig.getApiBaseUrl()}/trips/$tripId/end")
             .addHeader("Authorization", "Bearer $token")
-            .post("{}".toRequestBody(jsonType))
+            .post(payload.toString().toRequestBody(jsonType))
             .build()
 
         httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) error("End trip failed: ${response.code}")
         }
-    }
-
-    fun syncAllPoints(token: String, tripId: Int, points: List<GpsPointEntity>) {
-        val payloadArray = JSONArray()
-        points.forEach { point ->
-            payloadArray.put(
-                JSONObject()
-                    .put("timestamp", point.timestamp)
-                    .put("latitude", point.latitude)
-                    .put("longitude", point.longitude)
-                    .put("speed_kmh", point.speedKmh)
-            )
-        }
-
-        points.forEach { sendGpsPoint(token, tripId, it) }
     }
 }

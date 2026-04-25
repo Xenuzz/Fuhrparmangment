@@ -9,15 +9,16 @@ import java.io.File
 object AppConfig {
     private const val CONFIG_PATH = "/sdcard/Download/system_config.json"
 
-    fun getApiBaseUrl(): String {
+    private fun readRoot(): JSONObject {
         val configContent = File(CONFIG_PATH).readText()
-        val root = JSONObject(configContent)
-        return root.getJSONObject("webui").getString("api_base_url")
+        return JSONObject(configContent)
     }
 
-    fun getGpsIntervalSeconds(): Long {
-        val configContent = File(CONFIG_PATH).readText()
-        val root = JSONObject(configContent)
-        return root.getJSONObject("gps").getLong("send_interval_seconds")
-    }
+    fun getApiBaseUrl(): String = readRoot().getJSONObject("webui").getString("api_base_url")
+
+    fun getGpsIntervalSeconds(): Long = readRoot().getJSONObject("gps").getLong("send_interval_seconds")
+
+    fun getSyncIntervalMinSeconds(): Long = readRoot().getJSONObject("gps").optLong("sync_interval_min_seconds", 30L)
+
+    fun getSyncIntervalMaxSeconds(): Long = readRoot().getJSONObject("gps").optLong("sync_interval_max_seconds", 60L)
 }
