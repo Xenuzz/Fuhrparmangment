@@ -1,6 +1,6 @@
 """Trip model definitions."""
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -16,6 +16,10 @@ class Trip(Base):
     start_time = Column(DateTime(timezone=True), nullable=False)
     end_time = Column(DateTime(timezone=True), nullable=True)
     distance_km = Column(Float, nullable=True)
+    auto_started = Column(Boolean, nullable=False, default=False)
+    auto_ended = Column(Boolean, nullable=False, default=False)
+    status = Column(String(32), nullable=False, default="active")
 
     user = relationship("User", back_populates="trips")
     gps_points = relationship("GPSPoint", back_populates="trip", cascade="all, delete-orphan")
+    breaks = relationship("BreakEntry", back_populates="trip", cascade="all, delete-orphan")

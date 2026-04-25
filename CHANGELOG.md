@@ -33,3 +33,27 @@
 
 ### Updated
 - Updated `README.md` title section with project context.
+
+## 2026-04-25
+
+### Added
+- Added Android trip automation modules: `TripStateManager`, `MotionDetector`, `PauseDetector`, and `SmartGPSController`.
+- Added automated break handling and break sync payload model in Android client.
+- Added backend `BreakEntry` model with trip relation and persisted duration tracking.
+- Added backend break APIs:
+  - `POST /trips/{id}/breaks`
+  - `GET /trips/{id}/breaks`
+- Added trip schema support for `auto_started`, `auto_ended`, and `status` lifecycle fields.
+
+### Updated
+- Upgraded Android `TrackingService` to a resilient foreground orchestration service with:
+  - state machine transitions (`IDLE`, `MOVING`, `DRIVING`, `PAUSED`)
+  - smart GPS intervals by state
+  - background restart behavior
+  - automatic trip start/end lifecycle behavior
+  - periodic queued point sync every 30-60 seconds with retry bookkeeping
+- Updated Android local SQLite queue schema to store sync status and retry metadata.
+- Updated Android permissions and service start/stop actions for background stability.
+- Updated backend trip service to calculate and store break durations and lifecycle status transitions.
+- Updated backend trip routes to expose lifecycle flags and preload breaks in trip reads.
+- Updated shared `system_config.json` for v1.1 values and sync timing controls.
