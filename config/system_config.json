@@ -1,0 +1,28 @@
+{
+  "backend": {
+    "app_name": "TruckLog API",
+    "app_version": "1.0.0",
+    "host": "0.0.0.0",
+    "port": 8000,
+    "jwt_secret": "change_me_super_secret_key_for_production",
+    "jwt_algorithm": "HS256",
+    "access_token_expire_minutes": 1440,
+    "database": {
+      "host": "postgres",
+      "port": 5432,
+      "name": "trucklog",
+      "user": "trucklog",
+      "password": "trucklog"
+    },
+    "demo_user": {
+      "username": "driver",
+      "password": "driver123"
+    }
+  },
+  "webui": {
+    "api_base_url": "http://localhost:8000"
+  },
+  "gps": {
+    "send_interval_seconds": 10
+  }
+}

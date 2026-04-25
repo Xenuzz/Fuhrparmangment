@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.TruckLog" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#0066CC</item>
+        <item name="colorPrimaryVariant">#004999</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:statusBarColor" tools:targetApi="l">#004999</item>
+    </style>
+</resources>

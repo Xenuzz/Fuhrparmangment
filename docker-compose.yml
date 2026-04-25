@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: trucklog-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trucklog
+      POSTGRES_USER: trucklog
+      POSTGRES_PASSWORD: trucklog
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: trucklog-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+
+  webui:
+    build:
+      context: .
+      dockerfile: webui/Dockerfile
+    container_name: trucklog-webui
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres_data:
