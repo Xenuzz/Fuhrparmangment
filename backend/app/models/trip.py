@@ -28,3 +28,4 @@ class Trip(Base):
     user = relationship("User", back_populates="trips")
     gps_points = relationship("GPSPoint", back_populates="trip", cascade="all, delete-orphan")
     breaks = relationship("BreakEntry", back_populates="trip", cascade="all, delete-orphan")
+    violations = relationship("Violation", back_populates="trip", cascade="all, delete-orphan")

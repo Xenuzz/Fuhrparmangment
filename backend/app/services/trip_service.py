@@ -10,6 +10,7 @@ from app.models.trip import Trip
 from app.models.user import User
 from app.schemas.trip import BreakCreate, GPSPointCreate
 from app.services.analysis_service import AnalysisService
+from app.services.violation_service import ViolationService
 
 
 class TripService:
@@ -99,6 +100,7 @@ class TripService:
         breaks = db.query(BreakEntry).filter(BreakEntry.trip_id == trip.id).all()
 
         cls.run_trip_analysis(trip, points, breaks)
+        ViolationService.persist_trip_violations(db, trip, points)
 
         db.commit()
         db.refresh(trip)

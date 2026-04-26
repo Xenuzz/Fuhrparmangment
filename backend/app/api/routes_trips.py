@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.models.break_entry import BreakEntry
 from app.models.trip import Trip
 from app.models.user import User
+from app.models.violation import Violation
 from app.schemas.trip import (
     BreakCreate,
     BreakRead,
@@ -19,6 +20,7 @@ from app.schemas.trip import (
     TripRead,
     TripStartRequest,
     TripStartResponse,
+    ViolationRead,
 )
 from app.services.trip_service import TripService
 
@@ -166,3 +168,23 @@ def get_trip_analysis(
         average_speed_kmh=trip.average_speed_kmh or 0.0,
         max_speed_kmh=trip.max_speed_kmh or 0.0,
     )
+
+
+@router.get("/{trip_id}/violations", response_model=list[ViolationRead])
+def list_violations(
+    trip_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[ViolationRead]:
+    """Return all persisted speed violations for a trip."""
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == current_user.id).first()
+    if trip is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    violations = (
+        db.query(Violation)
+        .filter(Violation.trip_id == trip.id)
+        .order_by(Violation.start_time.asc())
+        .all()
+    )
+    return [ViolationRead.model_validate(item) for item in violations]

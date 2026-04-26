@@ -95,6 +95,24 @@ class TripAnalysisRead(BaseModel):
     max_speed_kmh: float
 
 
+class ViolationRead(BaseModel):
+    """Response payload for trip violation records."""
+
+    id: int
+    trip_id: int
+    type: str
+    start_time: datetime
+    end_time: datetime
+    measured_speed_kmh: float
+    allowed_speed_kmh: float
+    latitude: float
+    longitude: float
+    severity: str
+
+    class Config:
+        from_attributes = True
+
+
 class TripRead(BaseModel):
     """Response schema for trip records."""
 
