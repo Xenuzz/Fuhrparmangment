@@ -53,6 +53,9 @@ class TrackingService : Service() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         localDb = LocalGpsDatabase(this)
         createNotificationChannel()
+        TrackingDebugState.currentTrackingState = currentState.name
+        TrackingDebugState.lastSyncStatus = "service_created"
+        TrackingDebugState.unsyncedQueueCount = localDb.countUnsyncedPoints()
         startForeground(NOTIFICATION_ID, buildNotification(TrackingStatus(currentState, 0.0, null)))
         initLocationCallback()
     }
@@ -75,6 +78,7 @@ class TrackingService : Service() {
                 startSyncLoop()
             }
         }
+        TrackingDebugState.unsyncedQueueCount = localDb.countUnsyncedPoints()
         return START_STICKY
     }
 
@@ -114,6 +118,7 @@ class TrackingService : Service() {
         currentState = stateManager.update(speedKmh, Instant.now())
 
         if (previousState != currentState) {
+            TrackingDebugState.currentTrackingState = currentState.name
             onStateChanged(previousState, currentState)
             startGpsForState(currentState)
         }
@@ -129,6 +134,8 @@ class TrackingService : Service() {
                     speedKmh = speedKmh
                 )
             )
+            TrackingDebugState.gpsPointsRecorded += 1
+            TrackingDebugState.unsyncedQueueCount = localDb.countUnsyncedPoints()
         }
 
         refreshNotification(speedKmh)
@@ -169,6 +176,7 @@ class TrackingService : Service() {
             } catch (_: Exception) {
                 // Keep service alive on lifecycle network errors.
             }
+            TrackingDebugState.unsyncedQueueCount = localDb.countUnsyncedPoints()
         }
     }
 
@@ -197,16 +205,23 @@ class TrackingService : Service() {
 
         thread {
             val pendingPoints = localDb.getQueuedPointsByTrip(tripId)
-            if (pendingPoints.isEmpty()) return@thread
+            if (pendingPoints.isEmpty()) {
+                TrackingDebugState.lastSyncStatus = "no_pending"
+                TrackingDebugState.unsyncedQueueCount = localDb.countUnsyncedPoints()
+                return@thread
+            }
 
             pendingPoints.forEach { point ->
                 try {
                     apiClient.sendGpsPoint(token, tripId, point)
                     localDb.markPointsSynced(listOf(point.id))
+                    TrackingDebugState.lastSyncStatus = "sync_ok"
                 } catch (ex: Exception) {
                     localDb.incrementRetry(point.id, ex.message ?: "sync_error")
+                    TrackingDebugState.lastSyncStatus = "sync_error"
                 }
             }
+            TrackingDebugState.unsyncedQueueCount = localDb.countUnsyncedPoints()
         }
     }
 
@@ -221,6 +236,7 @@ class TrackingService : Service() {
                 } catch (_: Exception) {
                 } finally {
                     localDb.deletePointsByTrip(tripId)
+                    TrackingDebugState.unsyncedQueueCount = localDb.countUnsyncedPoints()
                 }
             }
         }
@@ -228,6 +244,7 @@ class TrackingService : Service() {
         activeTripId = null
         stateManager.reset()
         currentState = TripTrackingState.IDLE
+        TrackingDebugState.currentTrackingState = currentState.name
         syncHandler.removeCallbacksAndMessages(null)
     }
 

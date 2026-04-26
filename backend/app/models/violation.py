@@ -18,6 +18,8 @@ class Violation(Base):
     end_time = Column(DateTime(timezone=True), nullable=False, index=True)
     measured_speed_kmh = Column(Float, nullable=False)
     allowed_speed_kmh = Column(Float, nullable=False)
+    overspeed_kmh = Column(Float, nullable=False, default=0.0)
+    duration_seconds = Column(Integer, nullable=False, default=0)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     severity = Column(String(32), nullable=False)

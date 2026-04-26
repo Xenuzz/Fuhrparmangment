@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 18mm 14mm 18mm 14mm;
+      @bottom-center {
+        content: "Page " counter(page) " / " counter(pages) "  |  Exported " string(exported-at);
+        font-size: 10px;
+        color: #666;
+      }
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: #1c1c1c;
+      string-set: exported-at "{{ export_timestamp }}";
+    }
+
+    .header { margin-bottom: 18px; }
+    .title { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
+    .meta { margin: 2px 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid #d4d4d4;
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+    th {
+      background: #f1f3f5;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .signatures {
+      margin-top: 30px;
+      display: flex;
+      gap: 24px;
+    }
+    .signature-box {
+      width: 48%;
+      border-top: 1px solid #888;
+      padding-top: 6px;
+      min-height: 32px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1 class="title">{{ company_name }} - Timesheet</h1>
+    <p class="meta"><strong>Driver:</strong> {{ driver_name }}</p>
+    <p class="meta"><strong>Vehicle:</strong> {{ vehicle }}</p>
+    <p class="meta"><strong>Date range:</strong> {{ date_range }}</p>
+    <p class="meta"><strong>Job:</strong> {{ job_name }}</p>
+  </header>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Trip Start</th>
+        <th>Trip Destination</th>
+        <th>Distance (km)</th>
+        <th>Driving (min)</th>
+        <th>Break (min)</th>
+        <th>Total (min)</th>
+        <th>Violations</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in trips %}
+      <tr>
+        <td>{{ row.trip_start }}</td>
+        <td>{{ row.trip_destination }}</td>
+        <td>{{ "%.2f"|format(row.distance_km) }}</td>
+        <td>{{ row.driving_time_minutes }}</td>
+        <td>{{ row.break_time_minutes }}</td>
+        <td>{{ row.total_time_minutes }}</td>
+        <td>{{ row.violations_count }}</td>
+        <td>{{ row.notes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p><strong>Total violations:</strong> {{ total_violations }}</p>
+
+  <section class="signatures">
+    <div class="signature-box">Driver signature</div>
+    <div class="signature-box">Supervisor signature</div>
+  </section>
+
+  <p class="meta"><strong>Export timestamp:</strong> {{ export_timestamp }}</p>
+</body>
+</html>

@@ -25,6 +25,30 @@ class DemoUserConfig(BaseModel):
     password: str
 
 
+class ReportsConfig(BaseModel):
+    """Report and PDF rendering defaults."""
+
+    company_name: str
+    pdf_enabled: bool
+    default_timezone: str
+
+
+class DataQualityConfig(BaseModel):
+    """Threshold settings for GPS data quality grading."""
+
+    excellent_filter_rate_percent: float
+    good_filter_rate_percent: float
+    warning_filter_rate_percent: float
+
+
+class ViolationsConfig(BaseModel):
+    """Tuning values used by speed violation detection."""
+
+    tolerance_kmh: float
+    tolerance_percent: float
+    grouping_max_gap_seconds: int
+
+
 class BackendConfig(BaseModel):
     """Backend system settings loaded from JSON config."""
 
@@ -43,6 +67,9 @@ class SystemConfig(BaseModel):
     """Root system configuration model."""
 
     backend: BackendConfig
+    reports: ReportsConfig
+    data_quality: DataQualityConfig
+    violations: ViolationsConfig
 
 
 def _load_system_config() -> SystemConfig:
@@ -57,21 +84,35 @@ class Settings:
     """Backend settings wrapper with convenient derived values."""
 
     def __init__(self) -> None:
-        cfg = _load_system_config().backend
-        self.app_name = cfg.app_name
-        self.app_version = cfg.app_version
-        self.host = cfg.host
-        self.port = cfg.port
-        self.jwt_secret = cfg.jwt_secret
-        self.jwt_algorithm = cfg.jwt_algorithm
-        self.access_token_expire_minutes = cfg.access_token_expire_minutes
-        self.db_host = cfg.database.host
-        self.db_port = cfg.database.port
-        self.db_name = cfg.database.name
-        self.db_user = cfg.database.user
-        self.db_password = cfg.database.password
-        self.demo_username = cfg.demo_user.username
-        self.demo_password = cfg.demo_user.password
+        cfg = _load_system_config()
+        backend = cfg.backend
+
+        self.app_name = backend.app_name
+        self.app_version = backend.app_version
+        self.host = backend.host
+        self.port = backend.port
+        self.jwt_secret = backend.jwt_secret
+        self.jwt_algorithm = backend.jwt_algorithm
+        self.access_token_expire_minutes = backend.access_token_expire_minutes
+        self.db_host = backend.database.host
+        self.db_port = backend.database.port
+        self.db_name = backend.database.name
+        self.db_user = backend.database.user
+        self.db_password = backend.database.password
+        self.demo_username = backend.demo_user.username
+        self.demo_password = backend.demo_user.password
+
+        self.report_company_name = cfg.reports.company_name
+        self.report_pdf_enabled = cfg.reports.pdf_enabled
+        self.report_default_timezone = cfg.reports.default_timezone
+
+        self.dq_excellent_filter_rate_percent = cfg.data_quality.excellent_filter_rate_percent
+        self.dq_good_filter_rate_percent = cfg.data_quality.good_filter_rate_percent
+        self.dq_warning_filter_rate_percent = cfg.data_quality.warning_filter_rate_percent
+
+        self.violation_tolerance_kmh = cfg.violations.tolerance_kmh
+        self.violation_tolerance_percent = cfg.violations.tolerance_percent
+        self.violation_grouping_max_gap_seconds = cfg.violations.grouping_max_gap_seconds
 
     @property
     def sqlalchemy_database_uri(self) -> str:

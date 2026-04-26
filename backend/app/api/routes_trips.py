@@ -1,11 +1,13 @@
 """Trip lifecycle and retrieval routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.break_entry import BreakEntry
+from app.models.gps_point import GPSPoint
 from app.models.trip import Trip
 from app.models.user import User
 from app.models.violation import Violation
@@ -17,11 +19,14 @@ from app.schemas.trip import (
     TripAnalysisRead,
     TripEndRequest,
     TripEndResponse,
+    TripQualityRead,
     TripRead,
     TripStartRequest,
     TripStartResponse,
     ViolationRead,
 )
+from app.services.data_quality_service import DataQualityService
+from app.services.pdf_service import PDFService
 from app.services.trip_service import TripService
 
 router = APIRouter()
@@ -139,7 +144,7 @@ def get_trip(
     """Return trip detail including GPS trace."""
     trip = (
         db.query(Trip)
-        .options(selectinload(Trip.gps_points), selectinload(Trip.breaks))
+        .options(selectinload(Trip.gps_points), selectinload(Trip.breaks), selectinload(Trip.user))
         .filter(Trip.id == trip_id, Trip.user_id == current_user.id)
         .first()
     )
@@ -170,6 +175,23 @@ def get_trip_analysis(
     )
 
 
+@router.get("/{trip_id}/quality", response_model=TripQualityRead)
+def get_trip_quality(
+    trip_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TripQualityRead:
+    """Return GPS data quality counters and quality tier for the trip."""
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == current_user.id).first()
+    if trip is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    gps_points = db.query(GPSPoint).filter(GPSPoint.trip_id == trip.id).all()
+    breaks = db.query(BreakEntry).filter(BreakEntry.trip_id == trip.id).all()
+    violations = db.query(Violation).filter(Violation.trip_id == trip.id).all()
+    return TripQualityRead.model_validate(DataQualityService.build_metrics(gps_points, breaks, violations))
+
+
 @router.get("/{trip_id}/violations", response_model=list[ViolationRead])
 def list_violations(
     trip_id: int,
@@ -188,3 +210,24 @@ def list_violations(
         .all()
     )
     return [ViolationRead.model_validate(item) for item in violations]
+
+
+@router.get("/{trip_id}/timesheet.pdf")
+def get_trip_timesheet_pdf(
+    trip_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Export single trip timesheet to A4 PDF."""
+    trip = (
+        db.query(Trip)
+        .options(selectinload(Trip.user))
+        .filter(Trip.id == trip_id, Trip.user_id == current_user.id)
+        .first()
+    )
+    if trip is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    violations = db.query(Violation).filter(Violation.trip_id == trip.id).all()
+    pdf_bytes = PDFService.generate_trip_timesheet_pdf(trip, violations)
+    return Response(content=pdf_bytes, media_type="application/pdf")
