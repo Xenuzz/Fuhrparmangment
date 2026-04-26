@@ -28,6 +28,7 @@ class GPSPointCreate(BaseModel):
     latitude: float
     longitude: float
     speed_kmh: float
+    accuracy_m: float | None = None
 
 
 class TripEndRequest(BaseModel):
@@ -55,6 +56,7 @@ class GPSPointRead(BaseModel):
     latitude: float
     longitude: float
     speed_kmh: float
+    accuracy_m: float | None
 
     class Config:
         from_attributes = True
@@ -81,6 +83,18 @@ class BreakRead(BaseModel):
         from_attributes = True
 
 
+class TripAnalysisRead(BaseModel):
+    """Response schema with persisted analysis values for a trip."""
+
+    id: int
+    distance_km: float
+    driving_time_minutes: int
+    break_time_minutes: int
+    total_time_minutes: int
+    average_speed_kmh: float
+    max_speed_kmh: float
+
+
 class TripRead(BaseModel):
     """Response schema for trip records."""
 
@@ -89,6 +103,11 @@ class TripRead(BaseModel):
     start_time: datetime
     end_time: datetime | None
     distance_km: float | None
+    driving_time_minutes: int | None
+    break_time_minutes: int | None
+    total_time_minutes: int | None
+    average_speed_kmh: float | None
+    max_speed_kmh: float | None
     auto_started: bool
     auto_ended: bool
     status: str

@@ -57,3 +57,40 @@
 - Updated backend trip service to calculate and store break durations and lifecycle status transitions.
 - Updated backend trip routes to expose lifecycle flags and preload breaks in trip reads.
 - Updated shared `system_config.json` for v1.1 values and sync timing controls.
+
+## 2026-04-25 (TruckLog v1.2.0)
+
+### Added
+- Added backend analysis engine in `analysis_service.py` with stable metrics functions:
+  - `calculate_distance(gps_points)`
+  - `calculate_driving_time(states)`
+  - `calculate_break_time(breaks)`
+  - `calculate_total_time(trip)`
+  - `calculate_average_speed(distance, driving_time)`
+  - `calculate_max_speed(gps_points)`
+- Added GPS quality preprocessing pipeline with deterministic ordering and validation:
+  - timestamp sorting
+  - exact duplicate sample removal
+  - invalid point filtering for speed > 150 km/h
+  - invalid point filtering for accuracy > 50 m
+  - invalid point filtering for distance jumps > 100 m in 1 second
+- Added persisted trip analysis attributes to backend `Trip` model:
+  - `driving_time_minutes`
+  - `break_time_minutes`
+  - `total_time_minutes`
+  - `average_speed_kmh`
+  - `max_speed_kmh`
+- Added `GET /trips/{id}/analysis` endpoint for analysis retrieval.
+- Added optional `accuracy_m` handling in GPS payload/model for filtering support.
+
+### Updated
+- Updated trip end workflow to execute full trip analysis and store all computed values in database.
+- Updated backend schemas to expose analysis fields in trip responses.
+- Updated web UI trip detail page to display:
+  - `distance_km`
+  - `driving_time_minutes`
+  - `break_time_minutes`
+  - `total_time_minutes`
+  - `average_speed_kmh`
+  - `max_speed_kmh`
+- Updated backend app version from `1.1.0` to `1.2.0`.

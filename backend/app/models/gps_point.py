@@ -17,5 +17,6 @@ class GPSPoint(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     speed_kmh = Column(Float, nullable=False)
+    accuracy_m = Column(Float, nullable=True)
 
     trip = relationship("Trip", back_populates="gps_points")

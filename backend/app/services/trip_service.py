@@ -9,7 +9,7 @@ from app.models.gps_point import GPSPoint
 from app.models.trip import Trip
 from app.models.user import User
 from app.schemas.trip import BreakCreate, GPSPointCreate
-from app.utils.haversine import haversine_km
+from app.services.analysis_service import AnalysisService
 
 
 class TripService:
@@ -23,6 +23,11 @@ class TripService:
             start_time=datetime.now(UTC),
             end_time=None,
             distance_km=None,
+            driving_time_minutes=None,
+            break_time_minutes=None,
+            total_time_minutes=None,
+            average_speed_kmh=None,
+            max_speed_kmh=None,
             auto_started=auto_started,
             auto_ended=False,
             status="active",
@@ -41,6 +46,7 @@ class TripService:
             latitude=payload.latitude,
             longitude=payload.longitude,
             speed_kmh=payload.speed_kmh,
+            accuracy_m=payload.accuracy_m,
         )
         db.add(gps_point)
         db.commit()
@@ -65,33 +71,35 @@ class TripService:
         db.refresh(break_entry)
         return break_entry
 
-    @staticmethod
-    def calculate_trip_distance_km(points: list[GPSPoint]) -> float:
-        """Calculate total trip distance by summing segments."""
-        if len(points) < 2:
-            return 0.0
+    @classmethod
+    def run_trip_analysis(cls, trip: Trip, points: list[GPSPoint], breaks: list[BreakEntry]) -> None:
+        """Compute and assign all analysis fields for persistence on trip end."""
+        distance_km = AnalysisService.calculate_distance(points)
+        driving_time_minutes = AnalysisService.calculate_driving_time(points)
+        break_time_minutes = AnalysisService.calculate_break_time(breaks)
+        total_time_minutes = AnalysisService.calculate_total_time(trip)
+        average_speed_kmh = AnalysisService.calculate_average_speed(distance_km, driving_time_minutes)
+        max_speed_kmh = AnalysisService.calculate_max_speed(points)
 
-        sorted_points = sorted(points, key=lambda p: p.timestamp)
-        total_distance = 0.0
-        for i in range(1, len(sorted_points)):
-            prev_point = sorted_points[i - 1]
-            curr_point = sorted_points[i]
-            total_distance += haversine_km(
-                prev_point.latitude,
-                prev_point.longitude,
-                curr_point.latitude,
-                curr_point.longitude,
-            )
-        return round(total_distance, 3)
+        trip.distance_km = distance_km
+        trip.driving_time_minutes = driving_time_minutes
+        trip.break_time_minutes = break_time_minutes
+        trip.total_time_minutes = total_time_minutes
+        trip.average_speed_kmh = average_speed_kmh
+        trip.max_speed_kmh = max_speed_kmh
 
     @classmethod
     def end_trip(cls, db: Session, trip: Trip, auto_ended: bool = False) -> Trip:
-        """End trip and store calculated distance from recorded points."""
-        points = db.query(GPSPoint).filter(GPSPoint.trip_id == trip.id).all()
-        trip.distance_km = cls.calculate_trip_distance_km(points)
+        """End trip, run analysis pipeline, and persist computed metrics."""
         trip.end_time = datetime.now(UTC)
         trip.auto_ended = auto_ended
         trip.status = "completed"
+
+        points = db.query(GPSPoint).filter(GPSPoint.trip_id == trip.id).all()
+        breaks = db.query(BreakEntry).filter(BreakEntry.trip_id == trip.id).all()
+
+        cls.run_trip_analysis(trip, points, breaks)
+
         db.commit()
         db.refresh(trip)
         return trip
