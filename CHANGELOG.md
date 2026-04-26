@@ -94,3 +94,27 @@
   - `average_speed_kmh`
   - `max_speed_kmh`
 - Updated backend app version from `1.1.0` to `1.2.0`.
+
+## 2026-04-26 (TruckLog v1.3.0)
+
+### Added
+- Added backend `Violation` persistence model with full trip linkage and location/speed severity fields.
+- Added speed violation engine `violation_service.py` with OSM nearest-road lookup and speed-limit parsing.
+- Added sustained violation detection requiring multiple consecutive violating GPS points.
+- Added speed-limit fallback strategy for missing OSM `maxspeed` using highway defaults:
+  - `residential`: 50 km/h
+  - `primary`: 100 km/h
+  - `motorway`: 130 km/h
+- Added tolerance handling for violations using `max(5 km/h, 10%)` over allowed speed.
+- Added trip violations API endpoint:
+  - `GET /trips/{id}/violations`
+- Added frontend trip detail integration for violation loading and count display.
+- Added trip map enhancements for:
+  - green full-route rendering
+  - red violation route segments
+  - red violation markers with tooltip data (measured speed, allowed speed, duration)
+
+### Updated
+- Updated trip end workflow to detect and persist speed violations.
+- Updated backend dependency stack with `osmnx` for local OSM road metadata usage.
+- Updated backend app version from `1.2.0` to `1.3.0`.
