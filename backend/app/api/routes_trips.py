@@ -13,6 +13,7 @@ from app.schemas.trip import (
     BreakRead,
     GPSPointCreate,
     GPSPointRead,
+    TripAnalysisRead,
     TripEndRequest,
     TripEndResponse,
     TripRead,
@@ -143,3 +144,25 @@ def get_trip(
     if trip is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
     return TripRead.model_validate(trip)
+
+
+@router.get("/{trip_id}/analysis", response_model=TripAnalysisRead)
+def get_trip_analysis(
+    trip_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TripAnalysisRead:
+    """Return persisted trip analysis metrics."""
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == current_user.id).first()
+    if trip is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Trip not found")
+
+    return TripAnalysisRead(
+        id=trip.id,
+        distance_km=trip.distance_km or 0.0,
+        driving_time_minutes=trip.driving_time_minutes or 0,
+        break_time_minutes=trip.break_time_minutes or 0,
+        total_time_minutes=trip.total_time_minutes or 0,
+        average_speed_kmh=trip.average_speed_kmh or 0.0,
+        max_speed_kmh=trip.max_speed_kmh or 0.0,
+    )
