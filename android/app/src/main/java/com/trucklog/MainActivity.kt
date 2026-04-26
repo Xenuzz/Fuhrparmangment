@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -19,6 +21,20 @@ import kotlin.concurrent.thread
 class MainActivity : AppCompatActivity() {
     private val apiClient = ApiClient()
     private var token: String? = null
+    private val debugHandler = Handler(Looper.getMainLooper())
+
+    private val debugRefreshRunnable = object : Runnable {
+        override fun run() {
+            val debugPanel = findViewById<TextView>(R.id.debugPanel)
+            debugPanel.text = """
+                Tracking state: ${TrackingDebugState.currentTrackingState}
+                GPS points recorded: ${TrackingDebugState.gpsPointsRecorded}
+                Last sync status: ${TrackingDebugState.lastSyncStatus}
+                Unsynced queue count: ${TrackingDebugState.unsyncedQueueCount}
+            """.trimIndent()
+            debugHandler.postDelayed(this, 1000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +82,16 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
             statusText.text = "Background tracking stopped"
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        debugHandler.post(debugRefreshRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        debugHandler.removeCallbacks(debugRefreshRunnable)
     }
 
     private fun requestLocationPermissions() {

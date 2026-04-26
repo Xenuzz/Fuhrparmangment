@@ -96,6 +96,17 @@ class LocalGpsDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, nu
         writableDatabase.execSQL("UPDATE gps_points SET retry_count = retry_count + 1 WHERE id = $pointId")
     }
 
+
+    fun countUnsyncedPoints(): Int {
+        val cursor = readableDatabase.rawQuery("SELECT COUNT(*) FROM gps_points WHERE synced = 0", null)
+        cursor.use {
+            if (it.moveToFirst()) {
+                return it.getInt(0)
+            }
+        }
+        return 0
+    }
+
     fun deletePointsByTrip(tripId: Int) {
         writableDatabase.delete("gps_points", "trip_id = ?", arrayOf(tripId.toString()))
     }

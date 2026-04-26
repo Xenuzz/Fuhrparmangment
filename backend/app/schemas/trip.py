@@ -95,6 +95,18 @@ class TripAnalysisRead(BaseModel):
     max_speed_kmh: float
 
 
+class TripQualityRead(BaseModel):
+    """Response schema for trip GPS quality metrics."""
+
+    gps_points_total: int
+    gps_points_valid: int
+    gps_points_filtered: int
+    filter_rate_percent: float
+    breaks_total: int
+    violations_total: int
+    analysis_quality: str
+
+
 class ViolationRead(BaseModel):
     """Response payload for trip violation records."""
 
@@ -105,6 +117,8 @@ class ViolationRead(BaseModel):
     end_time: datetime
     measured_speed_kmh: float
     allowed_speed_kmh: float
+    overspeed_kmh: float
+    duration_seconds: int
     latitude: float
     longitude: float
     severity: str
@@ -126,6 +140,10 @@ class TripRead(BaseModel):
     total_time_minutes: int | None
     average_speed_kmh: float | None
     max_speed_kmh: float | None
+    vehicle: str | None
+    job_name: str | None
+    destination: str | None
+    notes: str | None
     auto_started: bool
     auto_ended: bool
     status: str

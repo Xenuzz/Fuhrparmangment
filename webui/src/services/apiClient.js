@@ -11,7 +11,7 @@ async function getApiBaseUrl() {
   return cachedApiBaseUrl;
 }
 
-export async function apiRequest(path, method = 'GET', body = null, requiresAuth = true) {
+export async function apiRequest(path, method = 'GET', body = null, requiresAuth = true, responseType = 'json') {
   const baseUrl = await getApiBaseUrl();
   const headers = { 'Content-Type': 'application/json' };
 
@@ -23,12 +23,16 @@ export async function apiRequest(path, method = 'GET', body = null, requiresAuth
   const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : null
+    body: body ? JSON.stringify(body) : null,
   });
 
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || `HTTP ${response.status}`);
+  }
+
+  if (responseType === 'blob') {
+    return response.blob();
   }
 
   return response.json();

@@ -118,3 +118,40 @@
 - Updated trip end workflow to detect and persist speed violations.
 - Updated backend dependency stack with `osmnx` for local OSM road metadata usage.
 - Updated backend app version from `1.2.0` to `1.3.0`.
+
+## 2026-04-26 (TruckLog v1.4.0)
+
+### Added
+- Added report aggregation service `report_service.py` with daily and weekly rollups by date, driver, vehicle, and job.
+- Added report endpoints:
+  - `GET /reports/daily`
+  - `GET /reports/weekly`
+- Added PDF service `pdf_service.py` using Jinja2 + WeasyPrint.
+- Added complete A4 timesheet HTML template at `backend/app/templates/pdf/timesheet.html`.
+- Added PDF endpoints:
+  - `GET /trips/{id}/timesheet.pdf`
+  - `GET /reports/weekly/timesheet.pdf`
+- Added data quality service `data_quality_service.py` with filter-rate classification tiers.
+- Added data quality endpoint:
+  - `GET /trips/{id}/quality`
+- Added backend report schemas and trip quality schema.
+- Added trip model fields for reporting document context (`vehicle`, `job_name`, `destination`, `notes`).
+- Added violation fields `overspeed_kmh` and `duration_seconds` for richer UI reporting.
+- Added Android debug/status panel UI and in-memory status bridge (`TrackingDebugState`).
+- Added local SQLite helper to count unsynced queue points.
+
+### Updated
+- Updated violation engine for v1.4 behavior:
+  - OSM lookup caching at graph and coordinate level.
+  - grouped/clustering logic for consecutive speeding points.
+  - severity classification based on overspeed km/h (`low`, `medium`, `high`).
+  - config-driven tolerance and grouping thresholds from `system_config.json`.
+- Updated backend settings loader to include `reports`, `data_quality`, and `violations` configuration sections.
+- Updated backend version from `1.3.0` to `1.4.0`.
+- Updated backend dependency stack with `jinja2` and `weasyprint`.
+- Updated backend Docker image with system packages required by WeasyPrint.
+- Updated web UI with:
+  - reports route and page (`/reports`)
+  - trip PDF export button
+  - trip data quality panel
+  - enhanced violation details (severity, overspeed, duration, measured/allowed speed)
